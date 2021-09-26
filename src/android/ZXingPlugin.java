@@ -46,6 +46,7 @@ public class ZXingPlugin extends CordovaPlugin {
         
         // Creating new interface (Integrator)
         IntentIntegrator integrator = new IntentIntegrator((CordovaActivity) cordova.getActivity());
+        integrator.setCaptureActivity(ScannerActivity.class);
         cordova.setActivityResultCallback(this);
         try {
             JSONObject params = args.getJSONObject(0);
@@ -54,6 +55,7 @@ public class ZXingPlugin extends CordovaPlugin {
             if (params.has("camera_id")) integrator.setCameraId(params.getInt("camera_id")); // Camera Id
             if (params.has("beep_enabled")) integrator.setBeepEnabled(params.getBoolean("beep_enabled")); // Beep Enabled
             if (params.has("timeout")) integrator.setTimeout(params.getInt("timeout")); // Timeout
+            if (params.has("save_barcode_image")) integrator.setBarcodeImageEnabled(params.getBoolean("save_barcode_image")); // Barcode Image Enabled
             
             // Scan Type
             if (params.has("scan_type")) {
@@ -105,7 +107,18 @@ public class ZXingPlugin extends CordovaPlugin {
             if(result.getContents() == null) {
                 scanCallbackContext.error("cancelled");
             } else {
-                scanCallbackContext.success(result.getContents());
+                try {
+                    JSONObject json = new JSONObject();
+                    json.put("contents", result.getContents());
+                    json.put("formatName", result.getFormatName());
+                    json.put("errorCorrectionLevel", result.getErrorCorrectionLevel());
+                    json.put("orientation", result.getOrientation());
+                    json.put("barcodeImagePath", result.getBarcodeImagePath());
+                
+                    scanCallbackContext.success(json);
+                } catch (JSONException e) {
+                    scanCallbackContext.error("Error encountered: " + e.getMessage());
+                }
             }
         } else {
             // This is important, otherwise the result will not be passed to the fragment
